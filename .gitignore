@@ -1,0 +1,9 @@
+node_modules/
+.env
+.DS_Store
+.dccache
+*.ipynb
+*.sqlite
+*.csv
+user_output_*.json
+users.json

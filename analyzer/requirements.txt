@@ -1,0 +1,7 @@
+aiohttp
+aiosqlite
+aiohttp_client_cache
+python-dateutil
+asyncspotify
+termcolor
+python-dotenv
