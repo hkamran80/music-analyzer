@@ -1,5 +1,5 @@
-# Music Analyzer
-Music Analyzer is like Spotify Wrapped®, but year-round.
+# Acoustats
+Acoustats is like Spotify Wrapped®, but year-round.
 
 ## Analyzer
 The analyzer is the entire backbone of the system. It's what talks to Last.fm's API to get a user's recently played tracks. It's also asynchronous, because otherwise it takes forever (40+ minutes synchronous, 10-15 minutes asynchronous).
@@ -29,7 +29,7 @@ Before running the analyzer, make sure to run `pip3 install -r requirements.txt`
 The analyzer will generate three files per Last.fm user, and one for all users. The universal file is a track cache (expires after a month), used to cache track data from Last.fm, MusicBrainz, and Spotify. The per-user files are a user cache (stores recent tracks for a week, then clears the cache), a CSV file will the user's tracks (if the `HISTORY_OUTPUT` environment variable is set), and a JSON file with the message contents (if a message is being sent, such as through the Discord bot).
 
 ## Discord Bot
-The Discord bot is a work-in-progress frontend client for the analyzer. It uses Node.js and [Discord.js](https://discordjs.guide/). The built-in `child_process` library is used to call the analyzer. It's been tested on a Mac, but I've been unable to get it to work on a Raspberry Pi.
+The Discord bot is a work-in-progress frontend client for the analyzer. It uses Node.js and [Discord.js](https://discordjs.guide), with Node's built-in `child_process` library being used to call the analyzer. It has been tested on macOS and Raspbian.
 
 The Discord bot also requires a few of its own environment variables, which you set in the `.env` file (rename the `.env.sample` file to `.env` and fill in the values).
 
@@ -39,6 +39,8 @@ The Discord bot also requires a few of its own environment variables, which you 
 - `GUILD_ID`: Used to deploy slash commands to a particular server/guild, instead of all servers
   - Uncomment lines 9 and 132 in `discord-bot/deploy-commands.js` and comment line 133 to switch to single-server command deployment
   - Reverse to switch to global server deployment
+- `PYTHONPATH`: The path to your Python executable
+  - Optional (defaults to output from `which python3`)
 
 Before running `npm run start`, do two things.
 1. `npm i` or `npm install`
@@ -47,4 +49,4 @@ Before running `npm run start`, do two things.
     - Content should be the following: `{}`
 
 ## License
-This program is licensed under the [GPLv3 license](https://choosealicense.com/licenses/gpl-3.0/).
+This program is licensed under the [AGPLv3 license](https://choosealicense.com/licenses/agpl-3.0/).

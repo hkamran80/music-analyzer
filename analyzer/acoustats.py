@@ -1,21 +1,21 @@
-# Last.fm Music Analyzer
-# Copyright (C) 2022, H. Kamran
-
+# Acoustats
+# Copyright (C) 2022 H. Kamran
+#
 # This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Last.fm Recent Tracks Analyzer
+Acoustats Analyzer
 Contributors:
     :: H. Kamran [@hkamran80] (author)
 """
@@ -43,13 +43,12 @@ USERNAME = os.environ.get("USERNAME", None)
 LAST_FM_API_KEY = os.environ.get("LAST_FM_API_KEY", None)
 SPOTIFY_CLIENT_ID = os.environ.get("SPOTIFY_CLIENT_ID", None)
 SPOTIFY_CLIENT_SECRET = os.environ.get("SPOTIFY_CLIENT_SECRET", None)
+RAW_DUMP = os.environ.get("RAW_DUMP", False)
 OUTPUT = os.environ.get("ANALYZER_OUTPUT", False)
 HISTORY_OUTPUT = os.environ.get("HISTORY_OUTPUT", False)
 
 BASE_URL = "https://ws.audioscrobbler.com/2.0/"
-HEADERS = {
-    "User-Agent": "Last.fm Recent Tracks Analyzer/1.0.0 ( hkamran@unisontech.org )"
-}
+HEADERS = {"User-Agent": "Acoustats Analyzer/1.0.0 ( hkamran@unisontech.org )"}
 
 WORK_QUEUE = asyncio.Queue()
 WORK_QUEUE_OUTPUT = []
@@ -825,17 +824,28 @@ async def generate_analysis_messages(
 
     duration_message += f"{seconds} {'seconds' if seconds != 1 else 'second'}"
 
-    messages = {
-        "toptrack": f"Your top track{'s were' if len(top_tracks) != 1 else ' was'} "
-        + join_strings(
-            [f"{top_track.name} ({top_track.artist})" for top_track in top_tracks]
-        ),
-        "topartist": f"Your top artist{'s were' if len(top_artists) != 1 else ' was'} "
-        + join_strings([top_artist.name for top_artist in top_artists]),
-        "topalbum": f"Your top album{'s were' if len(top_albums) != 1 else ' was'} "
-        + join_strings([top_album.name for top_album in top_albums]),
-        "duration": duration_message,
-    }
+    if not RAW_DUMP:
+        messages = {
+            "toptrack": f"Your top track{'s were' if len(top_tracks) != 1 else ' was'} "
+            + join_strings(
+                [f"{top_track.name} ({top_track.artist})" for top_track in top_tracks]
+            ),
+            "topartist": f"Your top artist{'s were' if len(top_artists) != 1 else ' was'} "
+            + join_strings([top_artist.name for top_artist in top_artists]),
+            "topalbum": f"Your top album{'s were' if len(top_albums) != 1 else ' was'} "
+            + join_strings([top_album.name for top_album in top_albums]),
+            "duration": duration_message,
+        }
+    else:
+        messages = {
+            "toptrack": join_strings(
+                [f"{top_track.name} ({top_track.artist})" for top_track in top_tracks]
+            ),
+            "topartist": join_strings([top_artist.name for top_artist in top_artists]),
+            "topalbum": join_strings([top_album.name for top_album in top_albums]),
+            "duration": duration_message.replace("You listened for ", ""),
+            "duration_datetime": f"T{hours}H{minutes}M{seconds}S",
+        }
 
     return messages
 
@@ -984,9 +994,11 @@ async def main(
     )
 
     generated_messages = await generate_analysis_messages(analyzed_tracks)
-    generated_messages[
-        "tracks"
-    ] = f"You listened to {'{:,}'.format(len(timeframe_tracks))} {basic_pluralize('track', len(timeframe_tracks))}"
+    generated_messages["tracks"] = (
+        f"You listened to {'{:,}'.format(len(timeframe_tracks))} {basic_pluralize('track', len(timeframe_tracks))}"
+        if not RAW_DUMP
+        else len(timeframe_tracks)
+    )
     generated_messages["timeframe"] = timeframe.value.lower()
 
     return [timeframe_tracks, generated_messages]
@@ -1000,15 +1012,6 @@ if __name__ == "__main__":
                 "red",
             )
         )
-
-    print(
-        """
-Music Analyzer - Copyright (C) 2022, H. Kamran.
-This program comes with ABSOLUTELY NO WARRANTY; for details, open the LICENSE file.
-This is free software, and you are welcome to redistribute it
-under certain conditions; open the LICENSE file for details.
-    """
-    )
 
     timeframe: Timeframe = list(Timeframe)[
         Timeframe.list_names().index(os.environ.get("TIMEFRAME", "THIS_WEEK"))

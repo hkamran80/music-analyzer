@@ -7,3 +7,6 @@ node_modules/
 *.csv
 user_output_*.json
 users.json
+digest/
+favicon.png
+logo-bg.png

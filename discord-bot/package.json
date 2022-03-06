@@ -1,18 +1,20 @@
 {
-    "name": "music-analyzer-discord-bot",
+    "name": "acoustats-bot",
     "version": "1.0.0",
     "private": true,
     "main": "index.js",
     "scripts": {
         "start": "node .",
-        "lint": "eslint ."
+        "lint": "eslint --ext .js,.ts --fix",
+        "format": "prettier . --write",
+        "prepare": "npm run lint && npm run format"
     },
     "author": {
         "name": "H. Kamran",
         "email": "hkamran@hkamran.com",
         "url": "https://hkamran.com"
     },
-    "license": "GPLv3",
+    "license": "AGPLv3",
     "dependencies": {
         "@discordjs/builders": "^0.11.0",
         "@discordjs/rest": "^0.2.0-canary.0",
@@ -21,6 +23,10 @@
         "dotenv": "^10.0.0"
     },
     "devDependencies": {
-        "eslint": "^8.6.0"
-    }
+        "@hkamran/prettier-config": "^1.1.1",
+        "eslint": "^8.10.0",
+        "eslint-config-prettier": "^8.5.0",
+        "prettier": "^2.5.1"
+    },
+    "prettier": "@hkamran/prettier-config"
 }

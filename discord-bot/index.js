@@ -1,24 +1,24 @@
 /*
-    Last.fm Music Analyzer
-    Copyright (C) 2022, H. Kamran
+    Acoustats
+    Copyright (C) 2022 H. Kamran
 
     This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program. If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 require("dotenv").config();
 
-const { Client, Intents, MessageEmbed, DMChannel } = require("discord.js");
+const { Client, Intents, MessageEmbed } = require("discord.js");
 const { existsSync, writeFileSync, readFileSync, stat } = require("fs");
 const { unlink } = require("fs/promises");
 const { exec } = require("child_process");
@@ -41,6 +41,15 @@ const timeframeOptions = [
     { label: "Last month", value: "last_month" },
     { label: "Last year", value: "last_year" },
 ];
+
+const getPythonPath = () => {
+    if (process.env.PYTHONPATH) {
+        return process.env.PYTHONPATH;
+    } else {
+        return "$(which python3)";
+    }
+};
+
 const getLastfmUsername = (userId) => {
     const path = "./users.json";
 
@@ -55,6 +64,7 @@ const getLastfmUsername = (userId) => {
         return null;
     }
 };
+
 const capitalizeFirstLetter = (string) =>
     string.charAt(0).toUpperCase() + string.slice(1);
 
@@ -63,6 +73,20 @@ const titleCase = (string) =>
         .split(" ")
         .map((w) => w[0].toUpperCase() + w.substr(1).toLowerCase())
         .join(" ");
+
+/**
+ *
+ * @param {string} commandName - The command name
+ * @param {boolean} isMessageDM - Whether the message is a DM or not
+ * @param {string} label - The time period
+ * @param {string} lastfmUsername - The Last.fm username
+ * @param {Interaction} interaction - The Discord.js interaction
+ * @param {object} envVars - The environment variables
+ * @param {number} startTime - The epoch time of the start
+ * @param {string} execError - The error, if set
+ * @param {string} stderr - The standard error
+ * @returns null
+ */
 const postAnalysis = (
     commandName,
     isMessageDM,
@@ -72,15 +96,15 @@ const postAnalysis = (
     envVars,
     startTime,
     execError,
-    stderr
+    stderr,
 ) => {
     if (execError) {
         console.error(
             `[${new Date().getTime()}] ${capitalizeFirstLetter(
-                commandName.replace("get-", "").replace("-", " ")
+                commandName.replace("get-", "").replace("-", " "),
             )} retrieval for ${
                 label.toLowerCase().indexOf("last") > -1 ? "the " : ""
-            }${label.toLowerCase()} failed`
+            }${label.toLowerCase()} failed`,
         );
         console.error(execError);
 
@@ -93,12 +117,12 @@ const postAnalysis = (
 
             console.log(
                 existsSync(
-                    `../analyzer/analyzer_lastfm_user_${lastfmUsername}.sqlite`
-                )
+                    `../analyzer/analyzer_lastfm_user_${lastfmUsername}.sqlite`,
+                ),
             );
 
             exec(
-                "cd ../analyzer; $(which python3) lastfm_analysis.py",
+                `cd ../analyzer; ${getPythonPath()} acoustats.py`,
                 {
                     env: envVars,
                 },
@@ -113,8 +137,8 @@ const postAnalysis = (
                         envVars,
                         startTime,
                         execError,
-                        stderr
-                    )
+                        stderr,
+                    ),
             );
         }
 
@@ -122,13 +146,13 @@ const postAnalysis = (
             embeds: [
                 new MessageEmbed()
                     .setColor("#FF0000")
-                    .setTitle(`Music Analysis for ${titleCase(label)}`)
+                    .setTitle(`Acoustats for ${titleCase(label)}`)
                     .setDescription(
                         `An error occurred when fetching ${
                             label.toLowerCase().indexOf("last") > -1
                                 ? "the "
                                 : ""
-                        }${label.toLowerCase()}'s statistics`
+                        }${label.toLowerCase()}'s statistics`,
                     ),
             ],
             ephemeral: !isMessageDM,
@@ -142,16 +166,16 @@ const postAnalysis = (
             if (stats.mtime.getTime() > startTime) {
                 console.log(
                     `[${stats.mtime.getTime()}] ${capitalizeFirstLetter(
-                        commandName.replace("get-", "").replace("-", " ")
+                        commandName.replace("get-", "").replace("-", " "),
                     )} retrieval for ${
                         label.toLowerCase().indexOf("last") > -1 ? "the " : ""
-                    }${label.toLowerCase()} completed`
+                    }${label.toLowerCase()} completed`,
                 );
 
                 const user_output = JSON.parse(
                     readFileSync(
-                        `../analyzer/user_output_${lastfmUsername}.json`
-                    )
+                        `../analyzer/user_output_${lastfmUsername}.json`,
+                    ),
                 );
 
                 let message = null;
@@ -173,27 +197,25 @@ const postAnalysis = (
                     message = user_output["tracks"];
                 }
 
-                interaction.user.send({
+                // interaction.user.send({
+                //     embeds: [
+                //         new MessageEmbed()
+                //             .setColor("#BE185D")
+                //             .setTitle(`Acoustats for ${titleCase(label)}`)
+                //             .setDescription(message),
+                //     ],
+                // });
+                // if (!isMessageDM) {
+                interaction.followUp({
                     embeds: [
                         new MessageEmbed()
-                            .setColor("#F472B6")
-                            .setTitle(`Music Analysis for ${titleCase(label)}`)
+                            .setColor("#BE185D")
+                            .setTitle(`Acoustats for ${titleCase(label)}`)
                             .setDescription(message),
                     ],
+                    ephemeral: !isMessageDM,
                 });
-                if (!isMessageDM) {
-                    interaction.followUp({
-                        embeds: [
-                            new MessageEmbed()
-                                .setColor("#F472B6")
-                                .setTitle(
-                                    `Music Analysis for ${titleCase(label)}`
-                                )
-                                .setDescription(message),
-                        ],
-                        ephemeral: !isMessageDM,
-                    });
-                }
+                // }
             }
         }
     });
@@ -202,7 +224,7 @@ const postAnalysis = (
 // When the client is ready, run this code (only once)
 client.once("ready", () => {
     console.log("Ready to respond!");
-    client.user.setActivity("Analyzing statistics!", { type: "COMPETING" });
+    client.user.setActivity("analyzing statistics!", { type: "COMPETING" });
 });
 
 // When the client is added to a new server/guild, run this code
@@ -210,14 +232,16 @@ client.on("guildCreate", (guild) => {
     client.channels.cache
         .get(guild.systemChannelId)
         .send(
-            `Hello users of ${guild.name}! I am Music Analyzer, a bot that is powered by Last.fm to retrieve your statistics at any time! I'm basically Spotify Wrapped, but year-round!\n\nTo begin, go into any channel and type \`set-lastfm-username\` and pass your Last.fm username. Then, use any of the commands provided by me! All output will only be seen by you, no one else can see it.\n\nSo go ahead, enjoy the power of **MUSIC ANALYZER**!`
+            `Hello users of ${guild.name}! I am Acoustats, a bot that is powered by Last.fm to retrieve your statistics at any time! I'm basically Spotify Wrapped, but year-round!\n\nTo begin, go into any channel and type \`set-lastfm-username\` and pass your Last.fm username. Then, use any of the commands provided by me! All output will only be seen by you, no one else can see it.\n\nSo go ahead, enjoy the power of **ACOUSTATS**!`,
         );
 });
 
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isCommand()) return;
     const { commandName } = interaction;
-    const isMessageDM = interaction.channel instanceof DMChannel;
+    const isMessageDM = interaction.channel
+        ? interaction.channel.type === "DM"
+        : true;
 
     if (commandName === "set-lastfm-username") {
         const username = interaction.options.getString("username");
@@ -227,13 +251,13 @@ client.on("interactionCreate", async (interaction) => {
             const currentUsers = Object.entries(JSON.parse(readFileSync(path)));
             if (
                 !Object.fromEntries(currentUsers).hasOwnProperty(
-                    interaction.user.id
+                    interaction.user.id,
                 )
             ) {
                 currentUsers.push([interaction.user.id, username]);
                 writeFileSync(
                     path,
-                    JSON.stringify(Object.fromEntries(currentUsers))
+                    JSON.stringify(Object.fromEntries(currentUsers)),
                 );
 
                 await interaction.reply({
@@ -250,8 +274,8 @@ client.on("interactionCreate", async (interaction) => {
             writeFileSync(
                 path,
                 JSON.stringify(
-                    Object.fromEntries([[interaction.user.id, username]])
-                )
+                    Object.fromEntries([[interaction.user.id, username]]),
+                ),
             );
 
             await interaction.reply({
@@ -275,9 +299,9 @@ client.on("interactionCreate", async (interaction) => {
                 embeds: [
                     new MessageEmbed()
                         .setColor("#FF0000")
-                        .setTitle("Music Analysis")
+                        .setTitle("Acoustats")
                         .setDescription(
-                            "Please set your Last.fm username with the `set-lastfm-username` command before getting any statistics!"
+                            "Please set your Last.fm username with the `set-lastfm-username` command before getting any statistics!",
                         ),
                 ],
                 components: [],
@@ -286,20 +310,20 @@ client.on("interactionCreate", async (interaction) => {
         } else {
             const value = interaction.options.getString("timeframe");
             const label = timeframeOptions.filter(
-                (option) => option.value === value
+                (option) => option.value === value,
             )[0].label;
 
             await interaction.reply({
                 embeds: [
                     new MessageEmbed()
-                        .setColor("#F472B6")
-                        .setTitle("Music Analysis")
+                        .setColor("#BE185D")
+                        .setTitle("Acoustats")
                         .setDescription(
                             `Getting the statistics for ${
                                 label.toLowerCase().indexOf("last") > -1
                                     ? "the "
                                     : ""
-                            }${label.toLowerCase()}!\n\nThis may take some time. You will be notified when the analysis is completed, assuming you have mention notifications on.\n\nPlease note that the duration provided may not be the actual duration you've listened to, due to issues with the way Last.fm provides data. Attempts have been taken to circumvent those issues, but nevertheless, some tracks do not have durations.`
+                            }${label.toLowerCase()}!\n\nThis may take some time. You will be notified when the analysis is completed, assuming you have mention notifications on.\n\nPlease note that the duration provided may not be the actual duration you've listened to, due to issues with the way Last.fm provides data. Attempts have been taken to circumvent those issues, but nevertheless, some tracks do not have durations.`,
                         ),
                 ],
                 ephemeral: !isMessageDM,
@@ -309,7 +333,7 @@ client.on("interactionCreate", async (interaction) => {
                 readFileSync("../analyzer/.env")
                     .toString()
                     .split("\n")
-                    .map((variable) => variable.split("="))
+                    .map((variable) => variable.split("=")),
             );
             envVars["USERNAME"] = lastfmUsername;
             envVars["TIMEFRAME"] = value.toUpperCase();
@@ -323,12 +347,12 @@ client.on("interactionCreate", async (interaction) => {
                     .replace("get-", "")
                     .replace("-", " ")} retrieval for ${
                     label.toLowerCase().indexOf("last") > -1 ? "the " : ""
-                }${label.toLowerCase()}`
+                }${label.toLowerCase()}`,
             );
 
             if (
                 !existsSync(
-                    `../analyzer/analyzer_lastfm_user_${lastfmUsername}.sqlite`
+                    `../analyzer/analyzer_lastfm_user_${lastfmUsername}.sqlite`,
                 )
             ) {
                 console.log(`[${startTime}] Retrieving fresh statistics...`);
@@ -336,10 +360,10 @@ client.on("interactionCreate", async (interaction) => {
                 interaction.followUp({
                     embeds: [
                         new MessageEmbed()
-                            .setColor("#F472B6")
-                            .setTitle(`Music Analysis for ${titleCase(label)}`)
+                            .setColor("#BE185D")
+                            .setTitle(`Acoustats for ${titleCase(label)}`)
                             .setDescription(
-                                "Getting fresh results, this may take longer than expected"
+                                "Getting fresh results, this may take longer than expected",
                             ),
                     ],
                     ephemeral: !isMessageDM,
@@ -347,7 +371,7 @@ client.on("interactionCreate", async (interaction) => {
             }
 
             exec(
-                "cd ../analyzer; $(which python3) lastfm_analysis.py",
+                `cd ../analyzer; ${getPythonPath()} acoustats.py`,
                 {
                     env: finalEnvVars,
                 },
@@ -362,8 +386,8 @@ client.on("interactionCreate", async (interaction) => {
                         finalEnvVars,
                         startTime,
                         execError,
-                        stderr
-                    )
+                        stderr,
+                    ),
             );
         }
     }

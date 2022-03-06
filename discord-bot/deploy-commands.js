@@ -1,5 +1,5 @@
 /*
-    Last.fm Music Analyzer
+    Acoustats
     Copyright (C) 2022, H. Kamran
 
     This program is free software: you can redistribute it and/or modify
@@ -48,7 +48,7 @@ const commands = [
             option
                 .setName("username")
                 .setDescription("Your Last.fm username")
-                .setRequired(true)
+                .setRequired(true),
         ),
     new SlashCommandBuilder()
         .setName("get-all-stats")
@@ -62,8 +62,8 @@ const commands = [
                     timeframeOptions.map((tfoption) => [
                         tfoption.label,
                         tfoption.value,
-                    ])
-                )
+                    ]),
+                ),
         ),
     new SlashCommandBuilder()
         .setName("get-top-tracks")
@@ -77,8 +77,8 @@ const commands = [
                     timeframeOptions.map((tfoption) => [
                         tfoption.label,
                         tfoption.value,
-                    ])
-                )
+                    ]),
+                ),
         ),
     new SlashCommandBuilder()
         .setName("get-top-artists")
@@ -92,8 +92,8 @@ const commands = [
                     timeframeOptions.map((tfoption) => [
                         tfoption.label,
                         tfoption.value,
-                    ])
-                )
+                    ]),
+                ),
         ),
     new SlashCommandBuilder()
         .setName("get-top-albums")
@@ -107,8 +107,8 @@ const commands = [
                     timeframeOptions.map((tfoption) => [
                         tfoption.label,
                         tfoption.value,
-                    ])
-                )
+                    ]),
+                ),
         ),
     new SlashCommandBuilder()
         .setName("get-duration")
@@ -122,13 +122,13 @@ const commands = [
                     timeframeOptions.map((tfoption) => [
                         tfoption.label,
                         tfoption.value,
-                    ])
-                )
+                    ]),
+                ),
         ),
     new SlashCommandBuilder()
         .setName("get-track-count")
         .setDescription(
-            "Find out how many tracks you listened to in a given time period"
+            "Find out how many tracks you listened to in a given time period",
         )
         .addStringOption((option) =>
             option
@@ -139,8 +139,8 @@ const commands = [
                     timeframeOptions.map((tfoption) => [
                         tfoption.label,
                         tfoption.value,
-                    ])
-                )
+                    ]),
+                ),
         ),
 ].map((command) => command.toJSON());
 
